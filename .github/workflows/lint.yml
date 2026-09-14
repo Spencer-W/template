@@ -1,0 +1,41 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check for Python files
+        id: pyfiles
+        run: |
+          if [ -z "$(git ls-files '*.py')" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install linters
+        if: steps.pyfiles.outputs.found == 'true'
+        run: pip install black ruff mypy
+
+      - name: black --check
+        if: steps.pyfiles.outputs.found == 'true'
+        run: black --check .
+
+      - name: ruff check
+        if: steps.pyfiles.outputs.found == 'true'
+        run: ruff check .
+
+      - name: mypy
+        if: steps.pyfiles.outputs.found == 'true'
+        run: mypy .
