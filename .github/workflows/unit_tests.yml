@@ -1,0 +1,35 @@
+name: unit_tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check for test files
+        id: testfiles
+        run: |
+          if [ -z "$(git ls-files 'test_*.py' '*_test.py' '**/test_*.py' '**/*_test.py')" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        if: steps.testfiles.outputs.found == 'true'
+        run: |
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: pytest
+        if: steps.testfiles.outputs.found == 'true'
+        run: pytest
